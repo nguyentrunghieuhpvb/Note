@@ -1,0 +1,9 @@
+<resources>
+    <string-array name="listTime">
+        <item>09:00</item>
+        <item>13:00</item>
+        <item>17:00</item>
+        <item>20:00</item>
+        <item>Other...</item>
+    </string-array>
+</resources>

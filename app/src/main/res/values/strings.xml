@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">Note</string>
+    <string name="today">Today</string>
+    <string name="tomorow">Tomorow</string>
+    <string name="other">Other...</string>
+    <string name="choosecolor">Choose Color</string>
+    <string name="choose_camera">Open camera</string>
+    <string name="choose_galery">Open Galery</string>
+    <string name="insert_picture">Insert Picture</string>
 </resources>

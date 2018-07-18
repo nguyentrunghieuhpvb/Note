@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Note</string>
+    <string name="today">Hôm nay</string>
+    <string name="tomorow">Ngày mai</string>
+    <string name="other">Khác...</string>
+    <string name="choosecolor">Chọn màu</string>
+    <string name="choose_camera">mở máy ảnh</string>
+    <string name="choose_galery">Chọn ảnh từ thư viện</string>
+    <string name="insert_picture">Thêm ảnh</string>
+</resources>
