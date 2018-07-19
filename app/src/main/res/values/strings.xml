@@ -7,4 +7,7 @@
     <string name="choose_camera">Open camera</string>
     <string name="choose_galery">Open Galery</string>
     <string name="insert_picture">Insert Picture</string>
+    <string name="choose_time">Choose Time</string>
+    <string name="cancel">Cancel</string>
+    <string name="oke">Oke</string>
 </resources>

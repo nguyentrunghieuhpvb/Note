@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.hieunt.note">
+
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
     <application
+        android:name=".MyApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -18,8 +23,13 @@
         </activity>
         <activity android:name=".base.BaseActivity" />
         <activity android:name=".activity.CreateNoteActivity">
-
         </activity>
+
+        <receiver
+            android:name=".reciver.AlarmReciver"
+            android:enabled="true"
+            android:exported="true"></receiver>
+
     </application>
 
 </manifest>

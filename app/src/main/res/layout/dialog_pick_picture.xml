@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:gravity="center_vertical"
     android:orientation="vertical">
 
     <TextView
@@ -20,49 +21,61 @@
         android:background="@color/blue"></LinearLayout>
 
     <LinearLayout
-        android:orientation="vertical"
-        android:layout_width="match_parent"
+        android:layout_width="300dp"
         android:layout_height="wrap_content"
         android:gravity="center"
+        android:orientation="vertical"
         android:paddingBottom="20dp"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp"
+
         android:paddingTop="20dp">
 
         <LinearLayout
-            android:gravity="center_vertical"
             android:id="@+id/ll_choose_camera"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp">
+
             <ImageView
-                android:tint="#636060"
-                android:src="@drawable/ic_camera"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <TextView
-                android:layout_marginLeft="20dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/choose_camera"/>
+                android:src="@drawable/ic_camera"
+                android:tint="#636060" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:text="@string/choose_camera" />
         </LinearLayout>
 
         <LinearLayout
-            android:gravity="center_vertical"
+            android:layout_width="match_parent"
+            android:layout_height="2px"
+            android:background="@color/green" />
+
+        <LinearLayout
             android:id="@+id/ll_choose_galery"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp">
+
             <ImageView
-                android:tint="#636060"
-                android:src="@drawable/ic_galery"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <TextView
-                android:layout_marginLeft="20dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/choose_galery"/>
+                android:src="@drawable/ic_galery"
+                android:tint="#636060" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:text="@string/choose_galery" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>
