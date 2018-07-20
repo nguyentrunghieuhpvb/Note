@@ -19,7 +19,7 @@
         android:background="@color/green" />
 
     <DatePicker
-        android:id="@+id/time_picker"
+        android:id="@+id/date_picker"
         style="@style/MyDatePickerStyle"
         android:layout_width="300dp"
         android:layout_height="wrap_content"

@@ -1,29 +1,39 @@
 package com.example.hieunt.note.model;
 
-import android.graphics.Bitmap;
-import android.net.Uri;
-
 import java.io.Serializable;
 
-import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.annotations.PrimaryKey;
-import io.realm.annotations.Required;
 
 public class Note extends RealmObject implements Serializable{
     @PrimaryKey
     private int id;
 
     private String title;
-    private String Content;
-    private String timeNote;
-    private String hourAlarm;
-    private String minuteAlarm;
-    private String DateAlarm;
+    private String content;
+    private String dayCreate;
     private String imagePath ;
     private int color;
     private boolean alarm = false;
+    private String date;
+    private String time;
     public Note() {
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public String getTime() {
+        return time;
+    }
+
+    public void setTime(String time) {
+        this.time = time;
     }
 
     public String getImagePath() {
@@ -51,43 +61,19 @@ public class Note extends RealmObject implements Serializable{
     }
 
     public String getContent() {
-        return Content;
+        return content;
     }
 
     public void setContent(String content) {
-        Content = content;
+        this.content = content;
     }
 
-    public String getTimeNote() {
-        return timeNote;
+    public String getDayCreate() {
+        return dayCreate;
     }
 
-    public void setTimeNote(String timeNote) {
-        this.timeNote = timeNote;
-    }
-
-    public String getHourAlarm() {
-        return hourAlarm;
-    }
-
-    public void setHourAlarm(String hourAlarm) {
-        this.hourAlarm = hourAlarm;
-    }
-
-    public String getMinuteAlarm() {
-        return minuteAlarm;
-    }
-
-    public void setMinuteAlarm(String minuteAlarm) {
-        this.minuteAlarm = minuteAlarm;
-    }
-
-    public String getDateAlarm() {
-        return DateAlarm;
-    }
-
-    public void setDateAlarm(String dateAlarm) {
-        DateAlarm = dateAlarm;
+    public void setDayCreate(String dayCreate) {
+        this.dayCreate = dayCreate;
     }
 
     public int getColor() {
@@ -105,4 +91,5 @@ public class Note extends RealmObject implements Serializable{
     public void setAlarm(boolean alarm) {
         this.alarm = alarm;
     }
+
 }

@@ -22,14 +22,14 @@
             </intent-filter>
         </activity>
         <activity android:name=".base.BaseActivity" />
-        <activity android:name=".activity.CreateNoteActivity">
-        </activity>
+        <activity android:name=".activity.CreateNoteActivity" />
 
         <receiver
             android:name=".reciver.AlarmReciver"
             android:enabled="true"
-            android:exported="true"></receiver>
+            android:exported="true" />
 
+        <activity android:name=".activity.DetailActivity" />
     </application>
 
 </manifest>

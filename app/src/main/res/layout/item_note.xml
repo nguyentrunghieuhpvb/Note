@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:id="@+id/cv_note">
+
+    <RelativeLayout
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:paddingTop="5dp">
+
+        <TextView
+            android:textColor="#282626"
+            android:id="@+id/tv_item_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:text="Title"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/iv_alarm"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_alignParentRight="true"
+            android:background="@drawable/ic_alarm" />
+
+        <RelativeLayout
+            android:id="@+id/v_line"
+            android:layout_width="match_parent"
+            android:layout_height="2px"
+            android:layout_below="@+id/tv_item_title"
+            android:layout_marginLeft="@dimen/node_margin"
+            android:layout_marginRight="@dimen/node_margin"
+            android:layout_marginTop="5dp"
+            android:background="#282626" />
+
+        <TextView
+            android:id="@+id/tv_item_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/v_line"
+            android:layout_marginLeft="@dimen/node_margin"
+            android:layout_marginRight="@dimen/node_margin"
+            android:layout_marginTop="5dp"
+            android:text="Content here" />
+
+
+        <TextView
+            android:id="@+id/tv_item_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginBottom="10dp"
+            android:layout_marginRight="5dp"
+            android:text="18/07 11:43"
+            android:textSize="10sp" />
+    </RelativeLayout>
+</android.support.v7.widget.CardView>

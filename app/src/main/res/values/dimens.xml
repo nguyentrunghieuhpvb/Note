@@ -4,4 +4,5 @@
     <dimen name="ic_toolbar_size">40dp</dimen>
     <dimen name="box_color">50dp</dimen>
     <dimen name="imagesize">120dp</dimen>
+    <dimen name="node_margin">5dp</dimen>
 </resources>

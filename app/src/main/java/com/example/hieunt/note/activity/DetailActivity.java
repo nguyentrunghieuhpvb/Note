@@ -17,9 +17,9 @@ import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
-import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -34,9 +34,9 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.TimePicker;
 
-import com.example.hieunt.note.customview.LinedEditText;
 import com.example.hieunt.note.R;
 import com.example.hieunt.note.base.BaseActivity;
+import com.example.hieunt.note.customview.LinedEditText;
 import com.example.hieunt.note.customview.MySpinner;
 import com.example.hieunt.note.database.DatabaseQuery;
 import com.example.hieunt.note.model.Note;
@@ -45,26 +45,26 @@ import com.example.hieunt.note.utils.Constant;
 import com.example.hieunt.note.utils.DateManager;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.io.Serializable;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.OnClick;
 import io.realm.Realm;
 
-public class CreateNoteActivity extends BaseActivity implements View.OnClickListener, Serializable {
+public class DetailActivity extends BaseActivity implements View.OnClickListener {
 
-    public static final String TAG = "CreateNoteActivity";
+    public static final String TAG = "DetailActivity";
+
     @BindView(R.id.tv_title)
     TextView tvTitle;
     @BindView(R.id.tv_time)
@@ -90,28 +90,45 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
     @BindView(R.id.iv_canncel_image)
     ImageView ivCancelImage;
 
-    private int flagGalery = 1, flagCamera = 2;
     private ArrayList<String> listDay = new ArrayList();
     private String listTime[];
     private Dialog mDialogPickColor;
     private Dialog mDialogInsertPicture;
-    private Note note = new Note();
+    private Note mNote;
     private int color = Color.WHITE;
     private Bitmap imageBitmap;
     private boolean isAlarm = false;
     private int noteHour, noteMinute;
     private ArrayAdapter<String> adapterDay;
     private ArrayAdapter<String> adapterTime;
+    private ArrayList<Note> listNote;
     private Realm realm;
     private DatabaseQuery db;
-    private int flag = 0;
+    private int flagCamera = 1;
+    private int flagDatePiker = 0;
+    private Note newNote = new Note();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        int id = getIntent().getIntExtra(Constant.NOTE_ID, 0);
         db = DatabaseQuery.getInstance(this);
+        mNote = db.getNote(id);
+
+        newNote.setId(mNote.getId());
+        newNote.setTitle(mNote.getTitle());
+        newNote.setContent(mNote.getContent());
+        newNote.setColor(mNote.getColor());
+        newNote.setImagePath(mNote.getImagePath());
+        newNote.setAlarm(mNote.isAlarm());
+        newNote.setDayCreate(mNote.getDayCreate());
+        newNote.setDate(mNote.getDate());
+        Log.d(TAG, "date : " + mNote.getDate());
+        newNote.setTime(mNote.getTime());
         Calendar c = Calendar.getInstance();
-        note.setTitle("Untitle");
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        String formattedDate = df.format(c.getTime());
+        tvCurrentTime.setText(formattedDate);
         mDialogInsertPicture = new Dialog(this);
         mDialogInsertPicture.requestWindowFeature(Window.FEATURE_NO_TITLE);
         mDialogInsertPicture.setContentView(R.layout.dialog_pick_picture);
@@ -130,19 +147,72 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
             public void afterTextChanged(Editable editable) {
                 if (etTitle.getText().toString().trim().length() < 1) {
                     tvTitle.setText("Note");
-                    note.setTitle("Untitle");
+                    newNote.setTitle("Untitle");
                 } else {
-                    note.setTitle(etTitle.getText().toString().trim());
+                    newNote.setTitle(etTitle.getText().toString().trim());
                 }
             }
         });
+        setActionTimeSelected();
+        setActionDateSelected();
+        setValue();
 
     }
 
-
     @Override
     public int setlayoutId() {
-        return R.layout.activity_creat_note;
+        return R.layout.activity_detail;
+    }
+
+    private void setValue() {
+        clCreatNote.setBackgroundColor(mNote.getColor());
+        if (mNote.getImagePath() != null) {
+            rlImage.setVisibility(View.VISIBLE);
+            File imgFile = new File(mNote.getImagePath());
+            if (imgFile.exists()) {
+                Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+                ivNote.setImageBitmap(myBitmap);
+
+            }
+        }
+        isAlarm = mNote.isAlarm();
+        tvTitle.setText(mNote.getTitle());
+        etTitle.setText(mNote.getTitle());
+        etContent.setText(mNote.getContent());
+
+        tvCurrentTime.setText(mNote.getDayCreate());
+        if (mNote.isAlarm()) {
+            tvAlarm.setVisibility(View.GONE);
+            clChooeTime.setVisibility(View.VISIBLE);
+            Calendar calendar = Calendar.getInstance();
+            String dayLongName = calendar.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, Locale.getDefault());
+            listDay.add(getResources().getString(R.string.today));
+            listDay.add(getResources().getString(R.string.tomorow));
+            listDay.add("next " + dayLongName);
+            listDay.add(mNote.getDate());
+            adapterDay = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, listDay);
+            adapterDay.notifyDataSetChanged();
+            spDate.setAdapter(adapterDay);
+            spDate.setSelection(listDay.size() - 1);
+            listTime = getResources().getStringArray(R.array.listTime);
+            ArrayList<String> tmp = new ArrayList<>(Arrays.asList(listTime));
+            if (!tmp.contains(mNote.getTime())) {
+                listTime[listTime.length - 1] = mNote.getTime();
+
+            }
+            adapterTime = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, listTime);
+            adapterTime.notifyDataSetChanged();
+            spTime.setAdapter(adapterTime);
+            if (!tmp.contains(mNote.getTime())) {
+                Log.d(TAG, "time : " + mNote.getTime());
+                spTime.setSelection(listTime.length - 1);
+
+            }
+        } else {
+            tvAlarm.setVisibility(View.VISIBLE);
+            clChooeTime.setVisibility(View.GONE);
+        }
+        flagDatePiker = 1;
     }
 
     @OnClick(R.id.iv_back)
@@ -181,23 +251,24 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
 
     @OnClick(R.id.iv_accept)
     public void pickAccept() {
-        note.setContent(etContent.getText().toString());
-        note.setColor(color);
-        note.setAlarm(isAlarm);
+        Log.d(TAG, "content : " + etContent.getText().toString());
+        newNote.setContent(etContent.getText().toString());
+        newNote.setColor(color);
+        newNote.setAlarm(isAlarm);
         if (isAlarm) {
             Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(System.currentTimeMillis());
             calendar.set(Calendar.HOUR_OF_DAY, noteHour);
             calendar.set(Calendar.MINUTE, noteMinute);
             AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            Intent alarmIntent = new Intent(CreateNoteActivity.this, AlarmReciver.class);
-            alarmIntent.putExtra(Constant.NOTE, note);
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(CreateNoteActivity.this, 0, alarmIntent, 0);
+            Intent alarmIntent = new Intent(DetailActivity.this, AlarmReciver.class);
+            alarmIntent.putExtra("note", newNote);
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(DetailActivity.this, 0, alarmIntent, 0);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 manager.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), pendingIntent);
             }
         }
-        db.addNote(note);
+        db.updateNote(newNote);
         onBackPressed();
 
     }
@@ -205,7 +276,7 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
     @OnClick(R.id.iv_canncel_image)
     public void pickCancelImage() {
         rlImage.setVisibility(View.GONE);
-        note.setImagePath("");
+        newNote.setImagePath("");
     }
 
     @OnClick(R.id.iv_cancel)
@@ -217,8 +288,6 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
 
     @OnClick(R.id.tv_alarm)
     public void tvAlarmClick() {
-        note.setDate(DateManager.getCurrentDate());
-        note.setTime("09:00");
         isAlarm = true;
         tvAlarm.setVisibility(View.GONE);
         clChooeTime.setVisibility(View.VISIBLE);
@@ -243,11 +312,7 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
             date = LocalDate.now();
             DayOfWeek dow = date.getDayOfWeek();
             String dayName = dow.getDisplayName(TextStyle.FULL_STANDALONE, Locale.getDefault());
-            Log.d("xxxx", dayName);
         }
-
-        setActionTimeSelected();
-        setActionDateSelected();
     }
 
     @Override
@@ -274,7 +339,7 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
                 mDialogPickColor.dismiss();
                 break;
             case R.id.ll_choose_camera:
-                flag = 1;
+                flagCamera = 1;
                 if (ContextCompat.checkSelfPermission(getApplicationContext(),
                         Manifest.permission.CAMERA)
                         != PackageManager.PERMISSION_GRANTED &&
@@ -292,7 +357,7 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
                 mDialogInsertPicture.dismiss();
                 break;
             case R.id.ll_choose_galery:
-                flag = 0;
+                flagCamera = 0;
                 if (ContextCompat.checkSelfPermission(getApplicationContext(),
                         Manifest.permission.READ_EXTERNAL_STORAGE)
                         != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(getApplicationContext(),
@@ -301,6 +366,7 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
                     ActivityCompat.requestPermissions(this,
                             new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE},
                             1);
+                } else {
                     choosePhotoFromGallary();
                 }
                 mDialogInsertPicture.dismiss();
@@ -315,7 +381,7 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
         Intent galleryIntent = new Intent(Intent.ACTION_PICK,
                 android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         galleryIntent.setType("image/*");
-        startActivityForResult(galleryIntent, flagGalery);
+        startActivityForResult(galleryIntent, 0);
     }
 
     private void takePhotoFromCamera() {
@@ -336,12 +402,6 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
                         final Bitmap bitmap = BitmapFactory.decodeStream(imageStream);
                         imageBitmap = bitmap;
                         ivNote.setImageBitmap(bitmap);
-
-                        Uri tempUri = getImageUri(getApplicationContext(), bitmap);
-                        String path = getRealPathFromURI(tempUri);
-                        Log.d(TAG, "path : " + path);
-                        note.setImagePath(path);
-
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     }
@@ -359,7 +419,7 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
                         Uri tempUri = getImageUri(getApplicationContext(), bitmap);
                         String path = getRealPathFromURI(tempUri);
                         Log.d(TAG, "path : " + path);
-                        note.setImagePath(path);
+                        newNote.setImagePath(path);
                     }
 
                     Log.d(TAG, "uri : " + data.toString());
@@ -377,7 +437,7 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
             case 1:
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if (flag == 1) {
+                    if (flagCamera == 1) {
                         takePhotoFromCamera();
                     } else {
                         choosePhotoFromGallary();
@@ -392,14 +452,14 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
 
 
     private void setActionTimeSelected() {
-        final int currentPos = spTime.getSelectedItemPosition();
+        Log.d(TAG, "setActionTimeSelected");
         spTime.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 Log.d(TAG, "pos : " + i);
                 if (i == 4) {
 
-                    final Dialog dialogTimerPicker = new Dialog(CreateNoteActivity.this);
+                    final Dialog dialogTimerPicker = new Dialog(DetailActivity.this);
                     dialogTimerPicker.requestWindowFeature(1);
                     dialogTimerPicker.setContentView(R.layout.dialog_timer_picker);
                     dialogTimerPicker.show();
@@ -414,7 +474,6 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
                         @Override
                         public void onClick(View view) {
                             dialogTimerPicker.dismiss();
-                            spTime.setSelection(currentPos);
                         }
                     });
 
@@ -438,8 +497,6 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
                     Log.d(TAG, "hour : " + noteHour);
                     noteMinute = Integer.parseInt(time.substring(time.indexOf(":") + 1, time.length()));
                 }
-                Log.d(TAG, "time : " + spTime.getSelectedItem().toString());
-                note.setTime(spTime.getSelectedItem().toString());
             }
 
             @Override
@@ -450,13 +507,13 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
     }
 
     private void setActionDateSelected() {
-        final int currentPos = spDate.getSelectedItemPosition();
         spDate.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 Log.d(TAG, "pos : " + i);
-                if (i == listDay.size() - 1) {
-                    final Dialog dialogDatePicker = new Dialog(CreateNoteActivity.this);
+                if (i == listDay.size() - 1 && flagDatePiker == 1) {
+
+                    final Dialog dialogDatePicker = new Dialog(DetailActivity.this);
                     dialogDatePicker.requestWindowFeature(1);
                     dialogDatePicker.setContentView(R.layout.dialog_date_picker);
                     dialogDatePicker.show();
@@ -470,24 +527,23 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
                         @Override
                         public void onClick(View view) {
                             dialogDatePicker.dismiss();
-                            spDate.setSelection(currentPos);
                         }
                     });
 
                     tvOk.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            dialogDatePicker.dismiss();
                             listDay.set(listDay.size() - 1, datePicker.getDayOfMonth() + "/" + (datePicker.getMonth() + 1) + "/" + datePicker.getYear());
                             adapterDay.notifyDataSetChanged();
+                            dialogDatePicker.dismiss();
                         }
                     });
                 } else {
                     listDay.set(listDay.size() - 1, getResources().getString(R.string.other));
                     adapterDay.notifyDataSetChanged();
                 }
+
                 String tmpDate = spDate.getSelectedItem().toString();
-                Log.d(TAG, "tmpdate : " + tmpDate);
                 String date;
                 if (tmpDate.equals(getResources().getString(R.string.today))) {
                     date = DateManager.getCurrentDate();
@@ -496,10 +552,9 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
                 } else if (tmpDate.contains("next")) {
                     date = DateManager.getDateNextWeek();
                 } else {
-                    date = listDay.get(listDay.size() - 1);
+                    date = tmpDate;
                 }
-                note.setDate(date);
-                Log.d(TAG, "date: " + date);
+                newNote.setDate(date);
             }
 
             @Override
