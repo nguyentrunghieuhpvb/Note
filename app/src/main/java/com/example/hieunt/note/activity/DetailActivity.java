@@ -20,6 +20,8 @@ import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -35,6 +37,7 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 
 import com.example.hieunt.note.R;
+import com.example.hieunt.note.adapter.ListImageAdapter;
 import com.example.hieunt.note.base.BaseActivity;
 import com.example.hieunt.note.customview.LinedEditText;
 import com.example.hieunt.note.customview.MySpinner;
@@ -83,12 +86,8 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
     ConstraintLayout clChooeTime;
     @BindView(R.id.cl_create_note)
     ConstraintLayout clCreatNote;
-    @BindView(R.id.rl_image)
-    RelativeLayout rlImage;
-    @BindView(R.id.iv_note)
-    ImageView ivNote;
-    @BindView(R.id.iv_canncel_image)
-    ImageView ivCancelImage;
+    @BindView(R.id.rv_list_image)
+    RecyclerView rvListImage;
 
     private ArrayList<String> listDay = new ArrayList();
     private String listTime[];
@@ -104,9 +103,12 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
     private ArrayList<Note> listNote;
     private Realm realm;
     private DatabaseQuery db;
-    private int flagCamera = 1;
+    private int flagGalery = 1, flagCamera = 2;
     private int flagDatePiker = 0;
+    private int flagTimePiker = 0;
     private Note newNote = new Note();
+    private ListImageAdapter listImageAdapter;
+    private ArrayList<String> listImagePath = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,12 +121,12 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
         newNote.setTitle(mNote.getTitle());
         newNote.setContent(mNote.getContent());
         newNote.setColor(mNote.getColor());
-        newNote.setImagePath(mNote.getImagePath());
+        newNote.setListImage(mNote.getListImage());
         newNote.setAlarm(mNote.isAlarm());
         newNote.setDayCreate(mNote.getDayCreate());
         newNote.setDate(mNote.getDate());
-        Log.d(TAG, "date : " + mNote.getDate());
         newNote.setTime(mNote.getTime());
+        listImagePath.addAll(mNote.getListImage());
         Calendar c = Calendar.getInstance();
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm");
         String formattedDate = df.format(c.getTime());
@@ -153,6 +155,20 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
                 }
             }
         });
+
+        listImageAdapter = new ListImageAdapter(this, listImagePath, new ListImageAdapter.IIvCancelClickListener() {
+            @Override
+            public void IvCancelClick(int pos) {
+                listImagePath.remove(pos);
+                listImageAdapter.removeImage(pos);
+                if (listImagePath.size() == 0) {
+                    rvListImage.setVisibility(View.GONE);
+                }
+            }
+        });
+        rvListImage.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        rvListImage.setAdapter(listImageAdapter);
+
         setActionTimeSelected();
         setActionDateSelected();
         setValue();
@@ -166,14 +182,8 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
 
     private void setValue() {
         clCreatNote.setBackgroundColor(mNote.getColor());
-        if (mNote.getImagePath() != null) {
-            rlImage.setVisibility(View.VISIBLE);
-            File imgFile = new File(mNote.getImagePath());
-            if (imgFile.exists()) {
-                Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
-                ivNote.setImageBitmap(myBitmap);
-
-            }
+        if (listImagePath.size() > 0) {
+            rvListImage.setVisibility(View.VISIBLE);
         }
         isAlarm = mNote.isAlarm();
         tvTitle.setText(mNote.getTitle());
@@ -182,6 +192,7 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
 
         tvCurrentTime.setText(mNote.getDayCreate());
         if (mNote.isAlarm()) {
+            Log.d(TAG, "alarm");
             tvAlarm.setVisibility(View.GONE);
             clChooeTime.setVisibility(View.VISIBLE);
             Calendar calendar = Calendar.getInstance();
@@ -198,15 +209,16 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
             ArrayList<String> tmp = new ArrayList<>(Arrays.asList(listTime));
             if (!tmp.contains(mNote.getTime())) {
                 listTime[listTime.length - 1] = mNote.getTime();
-
             }
             adapterTime = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, listTime);
             adapterTime.notifyDataSetChanged();
             spTime.setAdapter(adapterTime);
             if (!tmp.contains(mNote.getTime())) {
-                Log.d(TAG, "time : " + mNote.getTime());
+                flagTimePiker = 1;
                 spTime.setSelection(listTime.length - 1);
-
+            } else {
+                int pos = tmp.indexOf(mNote.getTime());
+                spTime.setSelection(pos);
             }
         } else {
             tvAlarm.setVisibility(View.VISIBLE);
@@ -273,11 +285,6 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
 
     }
 
-    @OnClick(R.id.iv_canncel_image)
-    public void pickCancelImage() {
-        rlImage.setVisibility(View.GONE);
-        newNote.setImagePath("");
-    }
 
     @OnClick(R.id.iv_cancel)
     public void pickCancelAlarm() {
@@ -288,6 +295,8 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
 
     @OnClick(R.id.tv_alarm)
     public void tvAlarmClick() {
+
+        Log.d(TAG, "tv Alarm clcik");
         isAlarm = true;
         tvAlarm.setVisibility(View.GONE);
         clChooeTime.setVisibility(View.VISIBLE);
@@ -381,18 +390,18 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
         Intent galleryIntent = new Intent(Intent.ACTION_PICK,
                 android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         galleryIntent.setType("image/*");
-        startActivityForResult(galleryIntent, 0);
+        startActivityForResult(galleryIntent, 1);
     }
 
     private void takePhotoFromCamera() {
+        Log.d(TAG, "takePhotoFromCamera");
         Intent intent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-        startActivityForResult(intent, flagCamera);
+        startActivityForResult(intent, 2);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
         switch (requestCode) {
             case 1:
                 if (resultCode == RESULT_OK) {
@@ -400,30 +409,28 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
                     try {
                         imageStream = getContentResolver().openInputStream(data.getData());
                         final Bitmap bitmap = BitmapFactory.decodeStream(imageStream);
-                        imageBitmap = bitmap;
-                        ivNote.setImageBitmap(bitmap);
+                        Uri tempUri = getImageUri(getApplicationContext(), bitmap);
+                        String path = getRealPathFromURI(tempUri);
+                        listImagePath.add(path);
+                        listImageAdapter.addImage(path);
+                        rvListImage.setVisibility(View.VISIBLE);
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     }
-
-                    Log.d(TAG, "Uri : " + data.toString());
                 }
                 break;
             case 2:
                 if (resultCode == RESULT_OK) {
                     if (data.getExtras().get("data") != null) {
                         Bitmap bitmap = (Bitmap) data.getExtras().get("data");
-                        imageBitmap = bitmap;
-                        ivNote.setImageBitmap(bitmap);
-                        rlImage.setVisibility(View.VISIBLE);
                         Uri tempUri = getImageUri(getApplicationContext(), bitmap);
                         String path = getRealPathFromURI(tempUri);
-                        Log.d(TAG, "path : " + path);
-                        newNote.setImagePath(path);
+                        listImagePath.add(path);
+                        listImageAdapter.addImage(path);
+                        rvListImage.setVisibility(View.VISIBLE);
+                    } else {
+                        Log.d(TAG, "image null");
                     }
-
-                    Log.d(TAG, "uri : " + data.toString());
-
                 }
                 break;
             default:
@@ -457,8 +464,7 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 Log.d(TAG, "pos : " + i);
-                if (i == 4) {
-
+                if (i == 4 && flagTimePiker == 0) {
                     final Dialog dialogTimerPicker = new Dialog(DetailActivity.this);
                     dialogTimerPicker.requestWindowFeature(1);
                     dialogTimerPicker.setContentView(R.layout.dialog_timer_picker);
@@ -487,15 +493,10 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
                                 adapterTime.notifyDataSetChanged();
                             }
                             dialogTimerPicker.dismiss();
+                            return;
 
                         }
                     });
-                } else {
-                    listTime[4] = getResources().getString(R.string.other);
-                    String time = listTime[i];
-                    noteHour = Integer.parseInt(time.substring(0, time.indexOf(":")));
-                    Log.d(TAG, "hour : " + noteHour);
-                    noteMinute = Integer.parseInt(time.substring(time.indexOf(":") + 1, time.length()));
                 }
             }
 
@@ -512,7 +513,6 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 Log.d(TAG, "pos : " + i);
                 if (i == listDay.size() - 1 && flagDatePiker == 1) {
-
                     final Dialog dialogDatePicker = new Dialog(DetailActivity.this);
                     dialogDatePicker.requestWindowFeature(1);
                     dialogDatePicker.setContentView(R.layout.dialog_date_picker);
@@ -536,13 +536,10 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
                             listDay.set(listDay.size() - 1, datePicker.getDayOfMonth() + "/" + (datePicker.getMonth() + 1) + "/" + datePicker.getYear());
                             adapterDay.notifyDataSetChanged();
                             dialogDatePicker.dismiss();
+                            return;
                         }
                     });
-                } else {
-                    listDay.set(listDay.size() - 1, getResources().getString(R.string.other));
-                    adapterDay.notifyDataSetChanged();
                 }
-
                 String tmpDate = spDate.getSelectedItem().toString();
                 String date;
                 if (tmpDate.equals(getResources().getString(R.string.today))) {

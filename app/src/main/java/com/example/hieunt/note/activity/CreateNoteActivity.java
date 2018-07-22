@@ -1,9 +1,7 @@
 package com.example.hieunt.note.activity;
 
 import android.Manifest;
-import android.app.AlarmManager;
 import android.app.Dialog;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -20,6 +18,8 @@ import android.support.constraint.ConstraintLayout;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -30,32 +30,27 @@ import android.widget.ArrayAdapter;
 import android.widget.DatePicker;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.TimePicker;
 
+import com.example.hieunt.note.adapter.ListImageAdapter;
 import com.example.hieunt.note.customview.LinedEditText;
 import com.example.hieunt.note.R;
 import com.example.hieunt.note.base.BaseActivity;
 import com.example.hieunt.note.customview.MySpinner;
 import com.example.hieunt.note.database.DatabaseQuery;
 import com.example.hieunt.note.model.Note;
-import com.example.hieunt.note.reciver.AlarmReciver;
-import com.example.hieunt.note.utils.Constant;
 import com.example.hieunt.note.utils.DateManager;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.Serializable;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.Locale;
 
 import butterknife.BindView;
@@ -83,12 +78,9 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
     ConstraintLayout clChooeTime;
     @BindView(R.id.cl_create_note)
     ConstraintLayout clCreatNote;
-    @BindView(R.id.rl_image)
-    RelativeLayout rlImage;
-    @BindView(R.id.iv_note)
-    ImageView ivNote;
-    @BindView(R.id.iv_canncel_image)
-    ImageView ivCancelImage;
+    @BindView(R.id.rv_list_image)
+    RecyclerView rvListImage;
+
 
     private int flagGalery = 1, flagCamera = 2;
     private ArrayList<String> listDay = new ArrayList();
@@ -99,12 +91,13 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
     private int color = Color.WHITE;
     private Bitmap imageBitmap;
     private boolean isAlarm = false;
-    private int noteHour, noteMinute;
     private ArrayAdapter<String> adapterDay;
     private ArrayAdapter<String> adapterTime;
     private Realm realm;
     private DatabaseQuery db;
     private int flag = 0;
+    private ArrayList<String> listImagePath = new ArrayList<>();
+    private ListImageAdapter listImageAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,7 +129,18 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
                 }
             }
         });
-
+        listImageAdapter = new ListImageAdapter(this, listImagePath, new ListImageAdapter.IIvCancelClickListener() {
+            @Override
+            public void IvCancelClick(int pos) {
+                listImagePath.remove(pos);
+                listImageAdapter.removeImage(pos);
+                if (listImagePath.size() == 0) {
+                    rvListImage.setVisibility(View.GONE);
+                }
+            }
+        });
+        rvListImage.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        rvListImage.setAdapter(listImageAdapter);
     }
 
 
@@ -184,29 +188,25 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
         note.setContent(etContent.getText().toString());
         note.setColor(color);
         note.setAlarm(isAlarm);
-        if (isAlarm) {
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(System.currentTimeMillis());
-            calendar.set(Calendar.HOUR_OF_DAY, noteHour);
-            calendar.set(Calendar.MINUTE, noteMinute);
-            AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            Intent alarmIntent = new Intent(CreateNoteActivity.this, AlarmReciver.class);
-            alarmIntent.putExtra(Constant.NOTE, note);
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(CreateNoteActivity.this, 0, alarmIntent, 0);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                manager.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), pendingIntent);
-            }
-        }
+        note.setListImage(listImagePath);
+//        if (isAlarm) {
+//            Calendar calendar = Calendar.getInstance();
+//            calendar.setTimeInMillis(System.currentTimeMillis());
+//            calendar.set(Calendar.HOUR_OF_DAY, noteHour);
+//            calendar.set(Calendar.MINUTE, noteMinute);
+//            AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+//            Intent alarmIntent = new Intent(CreateNoteActivity.this, AlarmReciver.class);
+//            alarmIntent.putExtra(Constant.NOTE, note);
+//            PendingIntent pendingIntent = PendingIntent.getBroadcast(CreateNoteActivity.this, 0, alarmIntent, 0);
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+//                manager.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), pendingIntent);
+//            }
+//        }
         db.addNote(note);
         onBackPressed();
 
     }
 
-    @OnClick(R.id.iv_canncel_image)
-    public void pickCancelImage() {
-        rlImage.setVisibility(View.GONE);
-        note.setImagePath("");
-    }
 
     @OnClick(R.id.iv_cancel)
     public void pickCancelAlarm() {
@@ -334,36 +334,27 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
                     try {
                         imageStream = getContentResolver().openInputStream(data.getData());
                         final Bitmap bitmap = BitmapFactory.decodeStream(imageStream);
-                        imageBitmap = bitmap;
-                        ivNote.setImageBitmap(bitmap);
-
                         Uri tempUri = getImageUri(getApplicationContext(), bitmap);
                         String path = getRealPathFromURI(tempUri);
-                        Log.d(TAG, "path : " + path);
-                        note.setImagePath(path);
+                        listImagePath.add(path);
+                        listImageAdapter.addImage(path);
+                        rvListImage.setVisibility(View.VISIBLE);
 
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     }
-
-                    Log.d(TAG, "Uri : " + data.toString());
                 }
                 break;
             case 2:
                 if (resultCode == RESULT_OK) {
                     if (data.getExtras().get("data") != null) {
                         Bitmap bitmap = (Bitmap) data.getExtras().get("data");
-                        imageBitmap = bitmap;
-                        ivNote.setImageBitmap(bitmap);
-                        rlImage.setVisibility(View.VISIBLE);
                         Uri tempUri = getImageUri(getApplicationContext(), bitmap);
                         String path = getRealPathFromURI(tempUri);
-                        Log.d(TAG, "path : " + path);
-                        note.setImagePath(path);
+                        listImagePath.add(path);
+                        listImageAdapter.addImage(path);
+                        rvListImage.setVisibility(View.VISIBLE);
                     }
-
-                    Log.d(TAG, "uri : " + data.toString());
-
                 }
                 break;
             default:
@@ -398,7 +389,6 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 Log.d(TAG, "pos : " + i);
                 if (i == 4) {
-
                     final Dialog dialogTimerPicker = new Dialog(CreateNoteActivity.this);
                     dialogTimerPicker.requestWindowFeature(1);
                     dialogTimerPicker.setContentView(R.layout.dialog_timer_picker);
@@ -422,9 +412,8 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
                         @Override
                         public void onClick(View view) {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                noteHour = timePicker.getHour();
-                                noteMinute = timePicker.getMinute();
-                                listTime[4] = noteHour + ":" + noteMinute;
+                                listTime[4] = timePicker.getHour() + ":" + timePicker.getMinute();
+                                note.setTime(listTime[4]);
                                 adapterTime.notifyDataSetChanged();
                             }
                             dialogTimerPicker.dismiss();
@@ -434,12 +423,9 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
                 } else {
                     listTime[4] = getResources().getString(R.string.other);
                     String time = listTime[i];
-                    noteHour = Integer.parseInt(time.substring(0, time.indexOf(":")));
-                    Log.d(TAG, "hour : " + noteHour);
-                    noteMinute = Integer.parseInt(time.substring(time.indexOf(":") + 1, time.length()));
+                    note.setTime(spTime.getSelectedItem().toString());
                 }
-                Log.d(TAG, "time : " + spTime.getSelectedItem().toString());
-                note.setTime(spTime.getSelectedItem().toString());
+
             }
 
             @Override
@@ -478,28 +464,30 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
                         @Override
                         public void onClick(View view) {
                             dialogDatePicker.dismiss();
-                            listDay.set(listDay.size() - 1, datePicker.getDayOfMonth() + "/" + (datePicker.getMonth() + 1) + "/" + datePicker.getYear());
+                            String date = datePicker.getDayOfMonth() + "/" + (datePicker.getMonth() + 1) + "/" + datePicker.getYear();
+                            listDay.set(listDay.size() - 1, date);
+                            note.setDate(date);
                             adapterDay.notifyDataSetChanged();
                         }
                     });
                 } else {
                     listDay.set(listDay.size() - 1, getResources().getString(R.string.other));
                     adapterDay.notifyDataSetChanged();
+                    String tmpDate = spDate.getSelectedItem().toString();
+                    Log.d(TAG, "tmpdate : " + tmpDate);
+                    String date;
+                    if (tmpDate.equals(getResources().getString(R.string.today))) {
+                        date = DateManager.getCurrentDate();
+                    } else if (tmpDate.equals(getResources().getString(R.string.tomorow))) {
+                        date = DateManager.getDateTomorow();
+                    } else if (tmpDate.contains("next")) {
+                        date = DateManager.getDateNextWeek();
+                    } else {
+                        date = listDay.get(listDay.size() - 1);
+                    }
+                    note.setDate(date);
+                    Log.d(TAG, "date: " + date);
                 }
-                String tmpDate = spDate.getSelectedItem().toString();
-                Log.d(TAG, "tmpdate : " + tmpDate);
-                String date;
-                if (tmpDate.equals(getResources().getString(R.string.today))) {
-                    date = DateManager.getCurrentDate();
-                } else if (tmpDate.equals(getResources().getString(R.string.tomorow))) {
-                    date = DateManager.getDateTomorow();
-                } else if (tmpDate.contains("next")) {
-                    date = DateManager.getDateNextWeek();
-                } else {
-                    date = listDay.get(listDay.size() - 1);
-                }
-                note.setDate(date);
-                Log.d(TAG, "date: " + date);
             }
 
             @Override

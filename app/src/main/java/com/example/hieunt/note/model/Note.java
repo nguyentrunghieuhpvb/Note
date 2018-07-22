@@ -1,22 +1,26 @@
 package com.example.hieunt.note.model;
 
+import android.media.Image;
+
 import java.io.Serializable;
+import java.util.ArrayList;
 
 import io.realm.RealmObject;
 import io.realm.annotations.PrimaryKey;
 
-public class Note extends RealmObject implements Serializable{
+public class Note extends RealmObject implements Serializable {
     @PrimaryKey
     private int id;
 
     private String title;
     private String content;
     private String dayCreate;
-    private String imagePath ;
+    private ArrayList<String> listImage;
     private int color;
     private boolean alarm = false;
     private String date;
     private String time;
+
     public Note() {
     }
 
@@ -36,12 +40,12 @@ public class Note extends RealmObject implements Serializable{
         this.time = time;
     }
 
-    public String getImagePath() {
-        return imagePath;
+    public ArrayList<String> getListImage() {
+        return listImage;
     }
 
-    public void setImagePath(String imagePath) {
-        this.imagePath = imagePath;
+    public void setListImage(ArrayList<String> listImage) {
+        this.listImage = listImage;
     }
 
     public int getId() {

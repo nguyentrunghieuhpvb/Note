@@ -61,6 +61,7 @@ public class ListNodeAdapter extends RecyclerView.Adapter<ListNodeAdapter.MyView
                 context.startActivity(intent);
             }
         });
+        holder.cvNote.setBackgroundColor(note.getColor());
     }
 
     @Override
