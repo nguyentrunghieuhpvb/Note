@@ -14,6 +14,7 @@ import android.os.Build;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.constraint.ConstraintLayout;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
@@ -41,21 +42,26 @@ import com.example.hieunt.note.customview.MySpinner;
 import com.example.hieunt.note.database.DatabaseQuery;
 import com.example.hieunt.note.model.Note;
 import com.example.hieunt.note.utils.DateManager;
+import com.example.hieunt.note.utils.MyAlarmManager;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.OnClick;
 import io.realm.Realm;
+import io.realm.RealmList;
 
 public class CreateNoteActivity extends BaseActivity implements View.OnClickListener, Serializable {
 
@@ -105,6 +111,11 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
         db = DatabaseQuery.getInstance(this);
         Calendar c = Calendar.getInstance();
         note.setTitle("Untitle");
+
+        String timeCreated = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(Calendar.getInstance().getTime());
+        tvCurrentTime.setText(timeCreated);
+        note.setDayCreate(timeCreated);
+
         mDialogInsertPicture = new Dialog(this);
         mDialogInsertPicture.requestWindowFeature(Window.FEATURE_NO_TITLE);
         mDialogInsertPicture.setContentView(R.layout.dialog_pick_picture);
@@ -129,7 +140,7 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
                 }
             }
         });
-        listImageAdapter = new ListImageAdapter(this, listImagePath, new ListImageAdapter.IIvCancelClickListener() {
+        listImageAdapter = new ListImageAdapter(this, new ArrayList<String>(), new ListImageAdapter.IIvCancelClickListener() {
             @Override
             public void IvCancelClick(int pos) {
                 listImagePath.remove(pos);
@@ -183,25 +194,22 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
 
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @OnClick(R.id.iv_accept)
     public void pickAccept() {
+        note.setId(db.getNoteId());
         note.setContent(etContent.getText().toString());
         note.setColor(color);
         note.setAlarm(isAlarm);
-        note.setListImage(listImagePath);
-//        if (isAlarm) {
-//            Calendar calendar = Calendar.getInstance();
-//            calendar.setTimeInMillis(System.currentTimeMillis());
-//            calendar.set(Calendar.HOUR_OF_DAY, noteHour);
-//            calendar.set(Calendar.MINUTE, noteMinute);
-//            AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-//            Intent alarmIntent = new Intent(CreateNoteActivity.this, AlarmReciver.class);
-//            alarmIntent.putExtra(Constant.NOTE, note);
-//            PendingIntent pendingIntent = PendingIntent.getBroadcast(CreateNoteActivity.this, 0, alarmIntent, 0);
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-//                manager.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), pendingIntent);
-//            }
-//        }
+        RealmList<String> listImage = new RealmList<>();
+        for (String s : listImagePath) {
+            listImage.add(s);
+        }
+        note.setListImage(listImage);
+        if (isAlarm) {
+            MyAlarmManager myAlarmManager = new MyAlarmManager(this);
+            myAlarmManager.addAlarm(note);
+        }
         db.addNote(note);
         onBackPressed();
 
@@ -301,6 +309,7 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
                     ActivityCompat.requestPermissions(this,
                             new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE},
                             1);
+                } else {
                     choosePhotoFromGallary();
                 }
                 mDialogInsertPicture.dismiss();
@@ -312,15 +321,22 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
 
 
     public void choosePhotoFromGallary() {
-        Intent galleryIntent = new Intent(Intent.ACTION_PICK,
-                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        galleryIntent.setType("image/*");
-        startActivityForResult(galleryIntent, flagGalery);
+        Log.d(TAG, "choosePhotoFromGallary");
+        Intent getIntent = new Intent(Intent.ACTION_GET_CONTENT);
+        getIntent.setType("image/*");
+
+        Intent pickIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        pickIntent.setType("image/*");
+
+        Intent chooserIntent = Intent.createChooser(getIntent, "Select Image");
+        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{pickIntent});
+
+        startActivityForResult(chooserIntent, 1);
     }
 
     private void takePhotoFromCamera() {
         Intent intent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-        startActivityForResult(intent, flagCamera);
+        startActivityForResult(intent, 2);
     }
 
     @Override
@@ -329,6 +345,7 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
 
         switch (requestCode) {
             case 1:
+                Log.d(TAG, " galery result");
                 if (resultCode == RESULT_OK) {
                     final InputStream imageStream;
                     try {
@@ -411,11 +428,11 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
                     tvOk.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                listTime[4] = timePicker.getHour() + ":" + timePicker.getMinute();
-                                note.setTime(listTime[4]);
-                                adapterTime.notifyDataSetChanged();
-                            }
+
+                            listTime[4] = timePicker.getCurrentHour() + ":" + timePicker.getCurrentMinute();
+                            note.setTime(listTime[4]);
+                            adapterTime.notifyDataSetChanged();
+
                             dialogTimerPicker.dismiss();
 
                         }

@@ -2,9 +2,11 @@ package com.example.hieunt.note.activity;
 
 import android.Manifest;
 import android.app.AlarmManager;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -16,6 +18,7 @@ import android.os.Build;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -25,6 +28,8 @@ import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
@@ -32,6 +37,7 @@ import android.widget.ArrayAdapter;
 import android.widget.DatePicker;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.TimePicker;
@@ -46,6 +52,7 @@ import com.example.hieunt.note.model.Note;
 import com.example.hieunt.note.reciver.AlarmReciver;
 import com.example.hieunt.note.utils.Constant;
 import com.example.hieunt.note.utils.DateManager;
+import com.example.hieunt.note.utils.MyAlarmManager;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -63,6 +70,7 @@ import java.util.Locale;
 import butterknife.BindView;
 import butterknife.OnClick;
 import io.realm.Realm;
+import io.realm.RealmList;
 
 public class DetailActivity extends BaseActivity implements View.OnClickListener {
 
@@ -88,6 +96,24 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
     ConstraintLayout clCreatNote;
     @BindView(R.id.rv_list_image)
     RecyclerView rvListImage;
+    @BindView(R.id.iv_note_back)
+    ImageView ivNoteBack;
+    @BindView(R.id.iv_note_next)
+    ImageView ivNoteNext;
+    @BindView(R.id.iv_note_back_cancel_click)
+    ImageView ivBackCancelClick;
+    @BindView(R.id.iv_note_next_cancel_click)
+    ImageView ivNextCancelClick;
+    @BindView(R.id.iv_share)
+    ImageView ivShare;
+    @BindView(R.id.iv_delete)
+    ImageView ivDelete;
+    @BindView(R.id.iv_new_note)
+    ImageView ivNewNote;
+    @BindView(R.id.rl_back_note)
+    RelativeLayout rlbackNote;
+    @BindView(R.id.rl_next_note)
+    RelativeLayout rlNextNote;
 
     private ArrayList<String> listDay = new ArrayList();
     private String listTime[];
@@ -109,28 +135,28 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
     private Note newNote = new Note();
     private ListImageAdapter listImageAdapter;
     private ArrayList<String> listImagePath = new ArrayList<>();
+    private int posNote = 0;
+    private MyAlarmManager myAlarmManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        int id = getIntent().getIntExtra(Constant.NOTE_ID, 0);
-        db = DatabaseQuery.getInstance(this);
-        mNote = db.getNote(id);
 
-        newNote.setId(mNote.getId());
-        newNote.setTitle(mNote.getTitle());
-        newNote.setContent(mNote.getContent());
-        newNote.setColor(mNote.getColor());
-        newNote.setListImage(mNote.getListImage());
-        newNote.setAlarm(mNote.isAlarm());
-        newNote.setDayCreate(mNote.getDayCreate());
-        newNote.setDate(mNote.getDate());
-        newNote.setTime(mNote.getTime());
-        listImagePath.addAll(mNote.getListImage());
-        Calendar c = Calendar.getInstance();
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-        String formattedDate = df.format(c.getTime());
-        tvCurrentTime.setText(formattedDate);
+        Bundle extras = getIntent().getExtras();
+        int id = 0;
+        if (extras != null) {
+            id = extras.getInt(Constant.NOTE_ID);
+        }
+        myAlarmManager = new MyAlarmManager(this);
+        db = DatabaseQuery.getInstance(this);
+        listNote = db.getAllNote();
+        for (int i = 0; i < listNote.size(); i++) {
+            if (listNote.get(i).getId() == id) {
+                mNote = listNote.get(i);
+                posNote = i;
+                break;
+            }
+        }
         mDialogInsertPicture = new Dialog(this);
         mDialogInsertPicture.requestWindowFeature(Window.FEATURE_NO_TITLE);
         mDialogInsertPicture.setContentView(R.layout.dialog_pick_picture);
@@ -156,7 +182,7 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
             }
         });
 
-        listImageAdapter = new ListImageAdapter(this, listImagePath, new ListImageAdapter.IIvCancelClickListener() {
+        listImageAdapter = new ListImageAdapter(this, new ArrayList<String>(), new ListImageAdapter.IIvCancelClickListener() {
             @Override
             public void IvCancelClick(int pos) {
                 listImagePath.remove(pos);
@@ -180,7 +206,47 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
         return R.layout.activity_detail;
     }
 
+    private void setVisiblyButtonNextBack() {
+        flagDatePiker = 0;
+        flagTimePiker = 0;
+        if (posNote == 0) {
+            rlbackNote.setClickable(false);
+            ivBackCancelClick.setVisibility(View.VISIBLE);
+            ivNoteBack.setVisibility(View.GONE);
+        } else {
+            rlbackNote.setClickable(true);
+            ivBackCancelClick.setVisibility(View.GONE);
+            ivNoteBack.setVisibility(View.VISIBLE);
+        }
+        if (posNote < listNote.size() - 1) {
+            rlNextNote.setClickable(true);
+            ivNoteNext.setVisibility(View.VISIBLE);
+            ivNextCancelClick.setVisibility(View.GONE);
+        } else {
+            rlNextNote.setClickable(false);
+            ivNoteNext.setVisibility(View.GONE);
+            ivNextCancelClick.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void setNewNoteValue() {
+        newNote.setId(mNote.getId());
+        newNote.setTitle(mNote.getTitle());
+        newNote.setContent(mNote.getContent());
+        newNote.setColor(mNote.getColor());
+        newNote.setListImage(mNote.getListImage());
+        newNote.setAlarm(mNote.isAlarm());
+        newNote.setDayCreate(mNote.getDayCreate());
+        newNote.setDate(mNote.getDate());
+        newNote.setTime(mNote.getTime());
+    }
+
     private void setValue() {
+        setNewNoteValue();
+        setVisiblyButtonNextBack();
+        listImagePath.clear();
+        listImagePath.addAll(mNote.getListImage());
+        listImageAdapter.setListImagePath(listImagePath);
         clCreatNote.setBackgroundColor(mNote.getColor());
         if (listImagePath.size() > 0) {
             rvListImage.setVisibility(View.VISIBLE);
@@ -189,7 +255,7 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
         tvTitle.setText(mNote.getTitle());
         etTitle.setText(mNote.getTitle());
         etContent.setText(mNote.getContent());
-
+        tvCurrentTime.setText(mNote.getDayCreate());
         tvCurrentTime.setText(mNote.getDayCreate());
         if (mNote.isAlarm()) {
             Log.d(TAG, "alarm");
@@ -227,9 +293,62 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
         flagDatePiker = 1;
     }
 
+    @OnClick(R.id.iv_new_note)
+    public void newNoteClick() {
+        Context wrapper = new ContextThemeWrapper(this, R.style.PopupMenu);
+        PopupMenu popup = new PopupMenu(wrapper, ivNewNote);
+        popup.getMenuInflater().inflate(R.menu.pop_up_menu, popup.getMenu());
+        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            public boolean onMenuItemClick(MenuItem item) {
+                startActivity(new Intent(DetailActivity.this, CreateNoteActivity.class));
+                return true;
+            }
+        });
+
+        popup.show();//showing popup menu
+    }
+
     @OnClick(R.id.iv_back)
     public void backToHome() {
         onBackPressed();
+    }
+
+    @OnClick(R.id.rl_back_note)
+    public void noteBackClick() {
+        posNote--;
+        setVisiblyButtonNextBack();
+        mNote = listNote.get(posNote);
+        setValue();
+
+    }
+
+    @OnClick(R.id.rl_next_note)
+    public void ivNoteNextClick() {
+        posNote++;
+        setVisiblyButtonNextBack();
+        mNote = listNote.get(posNote);
+        setValue();
+    }
+
+    @OnClick(R.id.rl_delete)
+    public void deleteNote() {
+        myAlarmManager.removeAalrm(newNote);
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Confirm Delete")
+                .setMessage("Are you sure to delete ?")
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        db.deleteNote(newNote);
+                        finish();
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.cancel();
+                    }
+                }).show();
     }
 
     @OnClick(R.id.iv_camera)
@@ -261,24 +380,24 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
 
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @OnClick(R.id.iv_accept)
     public void pickAccept() {
         Log.d(TAG, "content : " + etContent.getText().toString());
+        String timeCreated = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(Calendar.getInstance().getTime());
+        newNote.setDayCreate(timeCreated);
         newNote.setContent(etContent.getText().toString());
         newNote.setColor(color);
         newNote.setAlarm(isAlarm);
+        RealmList<String> listImage = new RealmList<>();
+        for (String s : listImagePath) {
+            listImage.add(s);
+        }
+        newNote.setListImage(listImage);
         if (isAlarm) {
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(System.currentTimeMillis());
-            calendar.set(Calendar.HOUR_OF_DAY, noteHour);
-            calendar.set(Calendar.MINUTE, noteMinute);
-            AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            Intent alarmIntent = new Intent(DetailActivity.this, AlarmReciver.class);
-            alarmIntent.putExtra("note", newNote);
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(DetailActivity.this, 0, alarmIntent, 0);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                manager.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), pendingIntent);
-            }
+            myAlarmManager.addAlarm(newNote);
+        } else {
+            myAlarmManager.removeAalrm(newNote);
         }
         db.updateNote(newNote);
         onBackPressed();

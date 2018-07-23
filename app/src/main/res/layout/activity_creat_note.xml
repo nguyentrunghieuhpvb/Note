@@ -77,11 +77,10 @@
         android:id="@+id/rv_list_image"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="20dp"
         android:layout_marginTop="10dp"
         android:visibility="gone"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/cl_top"/>
+        app:layout_constraintTop_toBottomOf="@+id/cl_top" />
 
 
     <android.support.constraint.ConstraintLayout
@@ -157,6 +156,7 @@
                     android:id="@+id/sp_date"
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
+                    android:background="@android:drawable/btn_dropdown"
                     android:spinnerMode="dropdown"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
@@ -166,6 +166,7 @@
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="10dp"
+                    android:background="@android:drawable/btn_dropdown"
                     android:spinnerMode="dropdown"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintLeft_toRightOf="@+id/sp_date"

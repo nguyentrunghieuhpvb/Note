@@ -5,6 +5,7 @@ import android.media.Image;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import io.realm.RealmList;
 import io.realm.RealmObject;
 import io.realm.annotations.PrimaryKey;
 
@@ -15,7 +16,7 @@ public class Note extends RealmObject implements Serializable {
     private String title;
     private String content;
     private String dayCreate;
-    private ArrayList<String> listImage;
+    private RealmList<String> listImage;
     private int color;
     private boolean alarm = false;
     private String date;
@@ -40,11 +41,11 @@ public class Note extends RealmObject implements Serializable {
         this.time = time;
     }
 
-    public ArrayList<String> getListImage() {
+    public RealmList<String> getListImage() {
         return listImage;
     }
 
-    public void setListImage(ArrayList<String> listImage) {
+    public void setListImage(RealmList<String> listImage) {
         this.listImage = listImage;
     }
 

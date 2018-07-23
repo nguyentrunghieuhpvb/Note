@@ -34,14 +34,17 @@ public class DatabaseQuery {
         return listNote;
     }
 
-    public void addNote(Note note) {
-        realm.beginTransaction();
+    public int getNoteId() {
         if (realm.where(Note.class).findAll().size() > 0) {
             int id_new = realm.where(Note.class).max("id").intValue() + 1;
-            note.setId(id_new);
+            return id_new;
         } else {
-            note.setId(1);
+            return 1;
         }
+    }
+
+    public void addNote(Note note) {
+        realm.beginTransaction();
         realm.insertOrUpdate(note);
         realm.commitTransaction();
     }
@@ -64,11 +67,21 @@ public class DatabaseQuery {
         note.setTitle(x.getTitle());
         note.setContent(x.getContent());
         note.setColor(x.getColor());
-        note.setImagePath(x.getImagePath());
+        note.setListImage(x.getListImage());
         note.setAlarm(x.isAlarm());
         note.setDayCreate(x.getDayCreate());
         note.setDate(x.getDate());
         note.setTime(x.getTime());
         realm.commitTransaction();
+    }
+
+    public void deleteNote(final Note note) {
+        realm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                RealmResults<Note> rows = realm.where(Note.class).equalTo("id", note.getId()).findAll();
+                rows.deleteAllFromRealm();
+            }
+        });
     }
 }

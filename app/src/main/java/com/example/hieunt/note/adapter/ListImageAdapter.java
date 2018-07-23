@@ -1,8 +1,10 @@
 package com.example.hieunt.note.adapter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -50,7 +52,7 @@ public class ListImageAdapter extends RecyclerView.Adapter<ListImageAdapter.MyVi
 
     @Override
     public void onBindViewHolder(@NonNull MyViewHolder holder, final int i) {
-        String path = listImagePath.get(i);
+        final String path = listImagePath.get(i);
         File imgFile = new File(path);
         if (imgFile.exists()) {
             Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
@@ -59,6 +61,16 @@ public class ListImageAdapter extends RecyclerView.Adapter<ListImageAdapter.MyVi
                 @Override
                 public void onClick(View view) {
                     ivCancelClickListener.IvCancelClick(i);
+                }
+            });
+
+            holder.ivNote.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Intent intent = new Intent();
+                    intent.setAction(Intent.ACTION_VIEW);
+                    intent.setDataAndType(Uri.fromFile(new File(path)), "image/*");
+                    context.startActivity(intent);
                 }
             });
         } else {
@@ -79,7 +91,7 @@ public class ListImageAdapter extends RecyclerView.Adapter<ListImageAdapter.MyVi
         public MyViewHolder(@NonNull View itemView) {
             super(itemView);
             ivNote = itemView.findViewById(R.id.iv_note);
-            ivCancel = itemView.findViewById(R.id.iv_cancel);
+            ivCancel = itemView.findViewById(R.id.iv_canncel_image);
         }
     }
 
