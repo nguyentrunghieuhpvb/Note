@@ -11,13 +11,13 @@
         android:gravity="center_vertical"
         android:paddingLeft="10dp"
         android:text="@string/choosecolor"
-        android:textColor="@color/blue"
+        android:textColor="@color/toolbar"
         android:textSize="20sp" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="2px"
-        android:background="@color/blue"></LinearLayout>
+        android:background="@color/toolbar"></LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"

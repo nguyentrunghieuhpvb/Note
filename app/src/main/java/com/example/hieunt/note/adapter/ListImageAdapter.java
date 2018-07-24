@@ -31,6 +31,7 @@ public class ListImageAdapter extends RecyclerView.Adapter<ListImageAdapter.MyVi
     public void setListImagePath(ArrayList<String> list) {
         listImagePath.clear();
         listImagePath.addAll(list);
+        notifyDataSetChanged();
     }
 
     public void removeImage(int pos) {

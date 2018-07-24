@@ -11,11 +11,8 @@ import android.widget.EditText;
 
 @SuppressLint("AppCompatCustomView")
 public class LinedEditText extends EditText {
-    String TAG = "LinedEditText";
     private Rect mRect;
     private Paint mPaint;
-
-    // we need this constructor for LayoutInflater
     public LinedEditText(Context context, AttributeSet attrs) {
         super(context, attrs);
 

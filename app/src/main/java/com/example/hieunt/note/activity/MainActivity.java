@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 
 import com.example.hieunt.note.adapter.ListNodeAdapter;
 import com.example.hieunt.note.database.DatabaseQuery;
@@ -13,16 +14,15 @@ import com.example.hieunt.note.model.Note;
 import com.example.hieunt.note.utils.GridSpacingItemDecoration;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 import butterknife.BindView;
 import butterknife.OnClick;
 
 public class MainActivity extends BaseActivity {
-    String TAG = "MainActivity";
-
     @BindView(R.id.rc_note)
     RecyclerView rvNote;
-
     private DatabaseQuery db;
     private ArrayList<Note> listNode;
     private ListNodeAdapter adapterNode;
@@ -53,13 +53,18 @@ public class MainActivity extends BaseActivity {
     protected void onResume() {
         db = DatabaseQuery.getInstance(this);
         listNode = db.getAllNote();
+        Collections.sort(listNode, new Comparator<Note>() {
+            @Override
+            public int compare(Note note, Note x) {
+                return x.getId() - note.getId();
+            }
+        });
         adapterNode.setListNote(listNode);
         super.onResume();
     }
 
     @Override
     protected void onDestroy() {
-        db.closeRealm();
         super.onDestroy();
     }
 }

@@ -1,10 +1,8 @@
 package com.example.hieunt.note.activity;
 
 import android.Manifest;
-import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -33,10 +31,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.DatePicker;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListPopupWindow;
 import android.widget.PopupMenu;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -44,18 +42,16 @@ import android.widget.TimePicker;
 
 import com.example.hieunt.note.R;
 import com.example.hieunt.note.adapter.ListImageAdapter;
+import com.example.hieunt.note.adapter.PopupAdapter;
 import com.example.hieunt.note.base.BaseActivity;
 import com.example.hieunt.note.customview.LinedEditText;
-import com.example.hieunt.note.customview.MySpinner;
 import com.example.hieunt.note.database.DatabaseQuery;
 import com.example.hieunt.note.model.Note;
-import com.example.hieunt.note.reciver.AlarmReciver;
 import com.example.hieunt.note.utils.Constant;
 import com.example.hieunt.note.utils.DateManager;
 import com.example.hieunt.note.utils.MyAlarmManager;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
@@ -65,6 +61,8 @@ import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Locale;
 
 import butterknife.BindView;
@@ -73,25 +71,18 @@ import io.realm.Realm;
 import io.realm.RealmList;
 
 public class DetailActivity extends BaseActivity implements View.OnClickListener {
-
-    public static final String TAG = "DetailActivity";
-
     @BindView(R.id.tv_title)
     TextView tvTitle;
-    @BindView(R.id.tv_time)
+    @BindView(R.id.tv_time_creat)
     TextView tvCurrentTime;
     @BindView(R.id.et_title)
     LinedEditText etTitle;
     @BindView(R.id.et_content)
     LinedEditText etContent;
-    @BindView(R.id.sp_date)
-    MySpinner spDate;
-    @BindView(R.id.sp_time)
-    MySpinner spTime;
     @BindView(R.id.tv_alarm)
     TextView tvAlarm;
-    @BindView(R.id.cl_choose_time_alarm)
-    ConstraintLayout clChooeTime;
+    @BindView(R.id.ll_choose_time_alarm)
+    LinearLayout llChooeTime;
     @BindView(R.id.cl_create_note)
     ConstraintLayout clCreatNote;
     @BindView(R.id.rv_list_image)
@@ -114,20 +105,26 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
     RelativeLayout rlbackNote;
     @BindView(R.id.rl_next_note)
     RelativeLayout rlNextNote;
+    @BindView(R.id.rl_date)
+    RelativeLayout rlDate;
+    @BindView(R.id.rl_time)
+    RelativeLayout rlTime;
+    @BindView(R.id.tv_date)
+    TextView tvDate;
+    @BindView(R.id.tv_time)
+    TextView tvTime;
+
 
     private ArrayList<String> listDay = new ArrayList();
-    private String listTime[];
+    private ArrayList<String> listTime = new ArrayList<>();
     private Dialog mDialogPickColor;
     private Dialog mDialogInsertPicture;
+    private Dialog mDialogConfirmDelete;
     private Note mNote;
     private int color = Color.WHITE;
-    private Bitmap imageBitmap;
     private boolean isAlarm = false;
-    private int noteHour, noteMinute;
-    private ArrayAdapter<String> adapterDay;
-    private ArrayAdapter<String> adapterTime;
+    private PopupAdapter adapterDate, adapterTime;
     private ArrayList<Note> listNote;
-    private Realm realm;
     private DatabaseQuery db;
     private int flagGalery = 1, flagCamera = 2;
     private int flagDatePiker = 0;
@@ -141,7 +138,6 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         Bundle extras = getIntent().getExtras();
         int id = 0;
         if (extras != null) {
@@ -150,6 +146,12 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
         myAlarmManager = new MyAlarmManager(this);
         db = DatabaseQuery.getInstance(this);
         listNote = db.getAllNote();
+        Collections.sort(listNote, new Comparator<Note>() {
+            @Override
+            public int compare(Note note, Note x) {
+                return x.getId() - note.getId();
+            }
+        });
         for (int i = 0; i < listNote.size(); i++) {
             if (listNote.get(i).getId() == id) {
                 mNote = listNote.get(i);
@@ -163,7 +165,6 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
         etTitle.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
             }
 
             @Override
@@ -194,11 +195,135 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
         });
         rvListImage.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         rvListImage.setAdapter(listImageAdapter);
-
-        setActionTimeSelected();
-        setActionDateSelected();
+        setPopUpDate();
+        setPopUpTime();
         setValue();
+    }
 
+    private void setPopUpTime() {
+        adapterTime = new PopupAdapter(this, new ArrayList<String>());
+        final ListPopupWindow listPopupWindow = new ListPopupWindow(
+                DetailActivity.this);
+        listPopupWindow.setAdapter(adapterTime);
+        listPopupWindow.setAnchorView(rlTime);
+        listPopupWindow.setWidth(200);
+        listPopupWindow.setModal(true);
+        rlTime.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                listPopupWindow.show();
+            }
+        });
+        listPopupWindow.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                if (i == 4) {
+                    final Dialog dialogTimerPicker = new Dialog(DetailActivity.this);
+                    dialogTimerPicker.requestWindowFeature(1);
+                    dialogTimerPicker.setContentView(R.layout.dialog_timer_picker);
+                    dialogTimerPicker.show();
+
+                    TextView tvCancel, tvOk;
+                    final TimePicker timePicker;
+                    tvCancel = dialogTimerPicker.findViewById(R.id.tv_cancel);
+                    tvOk = dialogTimerPicker.findViewById(R.id.tv_ok);
+                    timePicker = dialogTimerPicker.findViewById(R.id.time_picker);
+                    timePicker.setIs24HourView(true);
+                    tvCancel.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            dialogTimerPicker.dismiss();
+                        }
+                    });
+
+                    tvOk.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            String time = timePicker.getCurrentHour() + ":" + timePicker.getCurrentMinute();
+                            tvTime.setText(time);
+                            listTime.set(listTime.size() - 1, time);
+                            newNote.setTime(time);
+                            adapterTime.notifyDataSetChanged();
+                            dialogTimerPicker.dismiss();
+
+                        }
+                    });
+                } else {
+                    listTime.set(listTime.size() - 1, getResources().getString(R.string.other));
+                    String time = listTime.get(i);
+                    newNote.setTime(time);
+                    tvTime.setText(time);
+                }
+                listPopupWindow.dismiss();
+            }
+        });
+    }
+
+    private void setPopUpDate() {
+        adapterDate = new PopupAdapter(this, new ArrayList<String>());
+        final ListPopupWindow listPopupWindow = new ListPopupWindow(
+                DetailActivity.this);
+        listPopupWindow.setAdapter(adapterDate);
+        listPopupWindow.setAnchorView(rlDate);
+        listPopupWindow.setWidth(300);
+        listPopupWindow.setModal(true);
+        rlDate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                listPopupWindow.show();
+            }
+        });
+        listPopupWindow.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                if (i == listDay.size() - 1) {
+                    final Dialog dialogDatePicker = new Dialog(DetailActivity.this);
+                    dialogDatePicker.requestWindowFeature(1);
+                    dialogDatePicker.setContentView(R.layout.dialog_date_picker);
+                    dialogDatePicker.show();
+                    TextView tvCancel, tvOk;
+                    final DatePicker datePicker;
+                    tvCancel = dialogDatePicker.findViewById(R.id.tv_cancel);
+                    tvOk = dialogDatePicker.findViewById(R.id.tv_ok);
+                    datePicker = dialogDatePicker.findViewById(R.id.date_picker);
+                    tvCancel.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            dialogDatePicker.dismiss();
+                        }
+                    });
+                    tvOk.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            dialogDatePicker.dismiss();
+                            String date = datePicker.getDayOfMonth() + "/" + (datePicker.getMonth() + 1) + "/" + datePicker.getYear();
+                            tvDate.setText(date);
+                            listDay.set(listDay.size() - 1, date);
+                            newNote.setDate(date);
+                            adapterDate.setListItem(listDay);
+                        }
+                    });
+                } else {
+                    listDay.set(listDay.size() - 1, getResources().getString(R.string.other));
+                    adapterDate.notifyDataSetChanged();
+                    String tmpDate = listDay.get(i);
+                    tvDate.setText(listDay.get(i));
+
+                    String date;
+                    if (tmpDate.equals(getResources().getString(R.string.today))) {
+                        date = DateManager.getCurrentDate();
+                    } else if (tmpDate.equals(getResources().getString(R.string.tomorow))) {
+                        date = DateManager.getDateTomorow();
+                    } else if (tmpDate.contains("next")) {
+                        date = DateManager.getDateNextWeek();
+                    } else {
+                        date = listDay.get(listDay.size() - 1);
+                    }
+                    newNote.setDate(date);
+                }
+                listPopupWindow.dismiss();
+            }
+        });
     }
 
     @Override
@@ -258,39 +383,38 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
         tvCurrentTime.setText(mNote.getDayCreate());
         tvCurrentTime.setText(mNote.getDayCreate());
         if (mNote.isAlarm()) {
-            Log.d(TAG, "alarm");
             tvAlarm.setVisibility(View.GONE);
-            clChooeTime.setVisibility(View.VISIBLE);
+            llChooeTime.setVisibility(View.VISIBLE);
             Calendar calendar = Calendar.getInstance();
             String dayLongName = calendar.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, Locale.getDefault());
             listDay.add(getResources().getString(R.string.today));
             listDay.add(getResources().getString(R.string.tomorow));
             listDay.add("next " + dayLongName);
             listDay.add(mNote.getDate());
-            adapterDay = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, listDay);
-            adapterDay.notifyDataSetChanged();
-            spDate.setAdapter(adapterDay);
-            spDate.setSelection(listDay.size() - 1);
-            listTime = getResources().getStringArray(R.array.listTime);
-            ArrayList<String> tmp = new ArrayList<>(Arrays.asList(listTime));
-            if (!tmp.contains(mNote.getTime())) {
-                listTime[listTime.length - 1] = mNote.getTime();
+            adapterDate.setListItem(listDay);
+            tvDate.setText(mNote.getDate());
+
+            listTime = new ArrayList<>(Arrays.asList(getResources().getStringArray(R.array.listTime)));
+            if (!listTime.contains(mNote.getTime())) {
+                listTime.set(listTime.size() - 1, mNote.getTime());
             }
-            adapterTime = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, listTime);
-            adapterTime.notifyDataSetChanged();
-            spTime.setAdapter(adapterTime);
-            if (!tmp.contains(mNote.getTime())) {
-                flagTimePiker = 1;
-                spTime.setSelection(listTime.length - 1);
-            } else {
-                int pos = tmp.indexOf(mNote.getTime());
-                spTime.setSelection(pos);
-            }
+            flagTimePiker = 1;
+            flagDatePiker = 1;
+            tvTime.setText(mNote.getTime());
+            adapterTime.setListItem(listTime);
         } else {
             tvAlarm.setVisibility(View.VISIBLE);
-            clChooeTime.setVisibility(View.GONE);
+            llChooeTime.setVisibility(View.GONE);
         }
-        flagDatePiker = 1;
+    }
+
+    @OnClick(R.id.rl_share)
+    public void share() {
+        Intent intent = new Intent(android.content.Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        intent.putExtra(android.content.Intent.EXTRA_SUBJECT, newNote.getTitle());
+        intent.putExtra(android.content.Intent.EXTRA_TEXT, newNote.getContent());
+        startActivity(Intent.createChooser(intent, "Share"));
     }
 
     @OnClick(R.id.iv_new_note)
@@ -304,8 +428,7 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
                 return true;
             }
         });
-
-        popup.show();//showing popup menu
+        popup.show();
     }
 
     @OnClick(R.id.iv_back)
@@ -333,22 +456,28 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
     @OnClick(R.id.rl_delete)
     public void deleteNote() {
         myAlarmManager.removeAalrm(newNote);
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Confirm Delete")
-                .setMessage("Are you sure to delete ?")
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        db.deleteNote(newNote);
-                        finish();
-                    }
-                })
-                .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        dialogInterface.cancel();
-                    }
-                }).show();
+        mDialogConfirmDelete = new Dialog(this);
+        mDialogConfirmDelete.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        mDialogConfirmDelete.setContentView(R.layout.dialog_confirm_delete);
+        mDialogConfirmDelete.show();
+
+        TextView tvCancel, tvOk;
+        tvCancel = mDialogConfirmDelete.findViewById(R.id.tv_cancel);
+        tvOk = mDialogConfirmDelete.findViewById(R.id.tv_ok);
+        tvCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mDialogConfirmDelete.dismiss();
+            }
+        });
+        tvOk.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                db.deleteNote(mNote);
+                finish();
+            }
+        });
+
     }
 
     @OnClick(R.id.iv_camera)
@@ -383,7 +512,6 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @OnClick(R.id.iv_accept)
     public void pickAccept() {
-        Log.d(TAG, "content : " + etContent.getText().toString());
         String timeCreated = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(Calendar.getInstance().getTime());
         newNote.setDayCreate(timeCreated);
         newNote.setContent(etContent.getText().toString());
@@ -404,37 +532,29 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
 
     }
 
-
     @OnClick(R.id.iv_cancel)
     public void pickCancelAlarm() {
         isAlarm = false;
         tvAlarm.setVisibility(View.VISIBLE);
-        clChooeTime.setVisibility(View.GONE);
+        llChooeTime.setVisibility(View.GONE);
     }
 
     @OnClick(R.id.tv_alarm)
     public void tvAlarmClick() {
-
-        Log.d(TAG, "tv Alarm clcik");
+        listTime.clear();
+        listDay.clear();
         isAlarm = true;
         tvAlarm.setVisibility(View.GONE);
-        clChooeTime.setVisibility(View.VISIBLE);
-
+        llChooeTime.setVisibility(View.VISIBLE);
         Calendar calendar = Calendar.getInstance();
         String dayLongName = calendar.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, Locale.getDefault());
         listDay.add(getResources().getString(R.string.today));
         listDay.add(getResources().getString(R.string.tomorow));
         listDay.add("next " + dayLongName);
         listDay.add(getResources().getString(R.string.other));
-        adapterDay = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, listDay);
-        adapterDay.notifyDataSetChanged();
-        spDate.setAdapter(adapterDay);
-
-        listTime = getResources().getStringArray(R.array.listTime);
-        adapterTime = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, listTime);
-        adapterTime.notifyDataSetChanged();
-        spTime.setAdapter(adapterTime);
-
+        adapterDate.setListItem(listDay);
+        listTime.addAll(Arrays.asList(getResources().getStringArray(R.array.listTime)));
+        adapterTime.setListItem(listTime);
         LocalDate date = null;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             date = LocalDate.now();
@@ -513,7 +633,6 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
     }
 
     private void takePhotoFromCamera() {
-        Log.d(TAG, "takePhotoFromCamera");
         Intent intent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
         startActivityForResult(intent, 2);
     }
@@ -547,8 +666,6 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
                         listImagePath.add(path);
                         listImageAdapter.addImage(path);
                         rvListImage.setVisibility(View.VISIBLE);
-                    } else {
-                        Log.d(TAG, "image null");
                     }
                 }
                 break;
@@ -568,116 +685,11 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
                     } else {
                         choosePhotoFromGallary();
                     }
-                } else {
                 }
                 break;
             default:
                 break;
         }
-    }
-
-
-    private void setActionTimeSelected() {
-        Log.d(TAG, "setActionTimeSelected");
-        spTime.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                Log.d(TAG, "pos : " + i);
-                if (i == 4 && flagTimePiker == 0) {
-                    final Dialog dialogTimerPicker = new Dialog(DetailActivity.this);
-                    dialogTimerPicker.requestWindowFeature(1);
-                    dialogTimerPicker.setContentView(R.layout.dialog_timer_picker);
-                    dialogTimerPicker.show();
-
-                    TextView tvCancel, tvOk;
-                    final TimePicker timePicker;
-                    tvCancel = dialogTimerPicker.findViewById(R.id.tv_cancel);
-                    tvOk = dialogTimerPicker.findViewById(R.id.tv_ok);
-                    timePicker = dialogTimerPicker.findViewById(R.id.time_picker);
-                    timePicker.setIs24HourView(true);
-                    tvCancel.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            dialogTimerPicker.dismiss();
-                        }
-                    });
-
-                    tvOk.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                noteHour = timePicker.getHour();
-                                noteMinute = timePicker.getMinute();
-                                listTime[4] = noteHour + ":" + noteMinute;
-                                adapterTime.notifyDataSetChanged();
-                            }
-                            dialogTimerPicker.dismiss();
-                            return;
-
-                        }
-                    });
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> adapterView) {
-
-            }
-        });
-    }
-
-    private void setActionDateSelected() {
-        spDate.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                Log.d(TAG, "pos : " + i);
-                if (i == listDay.size() - 1 && flagDatePiker == 1) {
-                    final Dialog dialogDatePicker = new Dialog(DetailActivity.this);
-                    dialogDatePicker.requestWindowFeature(1);
-                    dialogDatePicker.setContentView(R.layout.dialog_date_picker);
-                    dialogDatePicker.show();
-
-                    TextView tvCancel, tvOk;
-                    final DatePicker datePicker;
-                    tvCancel = dialogDatePicker.findViewById(R.id.tv_cancel);
-                    tvOk = dialogDatePicker.findViewById(R.id.tv_ok);
-                    datePicker = dialogDatePicker.findViewById(R.id.date_picker);
-                    tvCancel.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            dialogDatePicker.dismiss();
-                        }
-                    });
-
-                    tvOk.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            listDay.set(listDay.size() - 1, datePicker.getDayOfMonth() + "/" + (datePicker.getMonth() + 1) + "/" + datePicker.getYear());
-                            adapterDay.notifyDataSetChanged();
-                            dialogDatePicker.dismiss();
-                            return;
-                        }
-                    });
-                }
-                String tmpDate = spDate.getSelectedItem().toString();
-                String date;
-                if (tmpDate.equals(getResources().getString(R.string.today))) {
-                    date = DateManager.getCurrentDate();
-                } else if (tmpDate.equals(getResources().getString(R.string.tomorow))) {
-                    date = DateManager.getDateTomorow();
-                } else if (tmpDate.contains("next")) {
-                    date = DateManager.getDateNextWeek();
-                } else {
-                    date = tmpDate;
-                }
-                newNote.setDate(date);
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> adapterView) {
-
-            }
-        });
     }
 
     public Uri getImageUri(Context inContext, Bitmap inImage) {

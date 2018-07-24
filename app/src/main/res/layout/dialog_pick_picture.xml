@@ -12,27 +12,26 @@
         android:gravity="center_vertical"
         android:paddingLeft="10dp"
         android:text="@string/insert_picture"
-        android:textColor="@color/blue"
+        android:textColor="@color/toolbar"
         android:textSize="20sp" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="2px"
-        android:background="@color/blue"></LinearLayout>
+        android:background="@color/toolbar"></LinearLayout>
 
     <LinearLayout
-        android:layout_width="300dp"
+        android:layout_width="250dp"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:orientation="vertical"
-        android:paddingBottom="20dp"
-
-        android:paddingTop="20dp">
+        android:orientation="vertical">
 
         <LinearLayout
             android:id="@+id/ll_choose_camera"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="50dp"
+            android:background="@drawable/bg_state_item"
+            android:clickable="true"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingLeft="10dp"
@@ -51,15 +50,13 @@
                 android:text="@string/choose_camera" />
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="2px"
-            android:background="@color/green" />
 
         <LinearLayout
             android:id="@+id/ll_choose_galery"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="50dp"
+            android:background="@drawable/bg_state_item"
+            android:clickable="true"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingLeft="10dp"
@@ -68,8 +65,7 @@
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_galery"
-                android:tint="#636060" />
+                android:src="@drawable/ic_galery" />
 
             <TextView
                 android:layout_width="wrap_content"

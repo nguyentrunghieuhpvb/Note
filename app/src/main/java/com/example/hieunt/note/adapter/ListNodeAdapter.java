@@ -19,16 +19,11 @@ import com.example.hieunt.note.utils.Constant;
 import java.util.ArrayList;
 
 public class ListNodeAdapter extends RecyclerView.Adapter<ListNodeAdapter.MyViewHolder> {
-
-
     private Context context;
     private ArrayList<Note> listNote;
-
-
     public ListNodeAdapter(Context context) {
         this.context = context;
     }
-
     public void setListNote(ArrayList<Note> listNote) {
         this.listNote = listNote;
         notifyDataSetChanged();

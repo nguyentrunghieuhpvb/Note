@@ -4,11 +4,12 @@
     <string name="tomorow">Ngày mai</string>
     <string name="other">Khác...</string>
     <string name="choosecolor">Chọn màu</string>
-    <string name="choose_camera">mở máy ảnh</string>
+    <string name="choose_camera">Mở máy ảnh</string>
     <string name="choose_galery">Chọn ảnh từ thư viện</string>
     <string name="insert_picture">Thêm ảnh</string>
     <string name="choose_time">Chọn thời gian</string>
     <string name="cancel">Hủy</string>
     <string name="oke">Oke</string>
     <string name="new_note">Note mới</string>
+    <string name="confirm_delete">Bạn có chắc chắn muốn xóa không ?</string>
 </resources>

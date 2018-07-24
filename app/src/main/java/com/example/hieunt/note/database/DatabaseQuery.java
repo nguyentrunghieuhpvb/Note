@@ -6,6 +6,7 @@ import android.util.Log;
 import com.example.hieunt.note.model.Note;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
@@ -53,7 +54,6 @@ public class DatabaseQuery {
         if (!realm.isClosed()) {
             realm.close();
         }
-
     }
 
     public Note getNote(int id) {

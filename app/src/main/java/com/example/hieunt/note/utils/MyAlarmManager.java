@@ -14,9 +14,7 @@ import com.example.hieunt.note.reciver.AlarmReciver;
 import java.util.Calendar;
 
 public class MyAlarmManager {
-    private String TAG = "MyAlarmManager";
     private Context context;
-
     public MyAlarmManager(Context context) {
         this.context = context;
     }
@@ -34,11 +32,9 @@ public class MyAlarmManager {
         cal.set(year, month - 1, day, hour, minute, 0);
         AlarmManager alarmMgr = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(context, AlarmReciver.class);
-        Log.d(TAG,"id  : " + note.getId());
         intent.putExtra(Constant.NOTE_ID, note.getId());
         intent.putExtra(Constant.TITLE, note.getTitle());
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, note.getId(), intent, PendingIntent.FLAG_CANCEL_CURRENT);
-        Log.d(TAG, "time inninute : " + cal.getTimeInMillis());
         alarmMgr.setExact(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pendingIntent);
 
     }

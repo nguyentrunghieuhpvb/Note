@@ -9,26 +9,27 @@
         android:layout_height="50dp"
         android:layout_marginLeft="10dp"
         android:gravity="center_vertical"
-        android:text="@string/choose_time"
+        android:text="Confirm delete"
         android:textColor="@color/toolbar"
-        android:textSize="15sp" />
+        android:textSize="20sp" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="2px"
         android:background="@color/toolbar" />
 
-    <DatePicker
-        android:id="@+id/date_picker"
-        style="@style/MyDatePickerStyle"
-        android:layout_width="300dp"
+    <TextView
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:datePickerMode="spinner"
-        android:theme="@style/MyDatePickerSpinnerStyle"></DatePicker>
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="10dp"
+        android:text="@string/confirm_delete"
+        android:textSize="20sp" />
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp">
 
         <TextView
             android:id="@+id/tv_cancel"
@@ -37,7 +38,8 @@
             android:layout_weight="1"
             android:background="@drawable/bg_buttom"
             android:gravity="center"
-            android:text="@string/cancel" />
+            android:text="@string/cancel"
+            android:textSize="20sp" />
 
         <TextView
             android:id="@+id/tv_ok"
@@ -46,6 +48,7 @@
             android:layout_weight="1"
             android:background="@drawable/bg_buttom"
             android:gravity="center"
-            android:text="@string/oke" />
+            android:text="@string/oke"
+            android:textSize="20sp" />
     </LinearLayout>
 </LinearLayout>
