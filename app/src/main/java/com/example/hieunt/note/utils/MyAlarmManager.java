@@ -6,10 +6,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
-import android.util.Log;
 
 import com.example.hieunt.note.model.Note;
-import com.example.hieunt.note.reciver.AlarmReciver;
+import com.example.hieunt.note.receiver.AlarmReceiver;
 
 import java.util.Calendar;
 
@@ -31,7 +30,7 @@ public class MyAlarmManager {
         int minute = Integer.parseInt(time.substring(time.indexOf(":") + 1, time.length()));
         cal.set(year, month - 1, day, hour, minute, 0);
         AlarmManager alarmMgr = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        Intent intent = new Intent(context, AlarmReciver.class);
+        Intent intent = new Intent(context, AlarmReceiver.class);
         intent.putExtra(Constant.NOTE_ID, note.getId());
         intent.putExtra(Constant.TITLE, note.getTitle());
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, note.getId(), intent, PendingIntent.FLAG_CANCEL_CURRENT);
@@ -41,7 +40,7 @@ public class MyAlarmManager {
 
     public void removeAalrm(Note note) {
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        Intent myIntent = new Intent(context, AlarmReciver.class);
+        Intent myIntent = new Intent(context, AlarmReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
                 context, note.getId(), myIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT);

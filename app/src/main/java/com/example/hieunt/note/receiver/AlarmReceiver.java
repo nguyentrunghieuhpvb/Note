@@ -1,25 +1,17 @@
-package com.example.hieunt.note.reciver;
+package com.example.hieunt.note.receiver;
 
-import android.annotation.SuppressLint;
-import android.app.AlarmManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
-import android.os.PowerManager;
 import android.support.v4.app.NotificationCompat;
-import android.util.Log;
-import android.widget.Toast;
 
 import com.example.hieunt.note.R;
 import com.example.hieunt.note.activity.DetailActivity;
-import com.example.hieunt.note.activity.MainActivity;
-import com.example.hieunt.note.model.Note;
 import com.example.hieunt.note.utils.Constant;
 
-public class AlarmReciver extends BroadcastReceiver {
+public class AlarmReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         int id = intent.getIntExtra(Constant.NOTE_ID, 0);

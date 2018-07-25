@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.DisplayMetrics;
 import android.util.Log;
 
 import com.example.hieunt.note.adapter.ListNodeAdapter;
@@ -31,10 +32,14 @@ public class MainActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+
+        DisplayMetrics displayMetrics = getApplication().getResources().getDisplayMetrics();
+        float dpWidth = displayMetrics.widthPixels / displayMetrics.density;
+        int numOfColumns = (int) (dpWidth / 180);
         adapterNode = new ListNodeAdapter(this);
-        GridLayoutManager manager = new GridLayoutManager(this, 2, GridLayoutManager.VERTICAL, false);
+        GridLayoutManager manager = new GridLayoutManager(this, numOfColumns, GridLayoutManager.VERTICAL, false);
         rvNote.setLayoutManager(manager);
-        rvNote.addItemDecoration(new GridSpacingItemDecoration(2, 20, true, 0));
+        rvNote.addItemDecoration(new GridSpacingItemDecoration(numOfColumns, 20, true));
         rvNote.setAdapter(adapterNode);
     }
 

@@ -26,7 +26,7 @@
         <activity android:name=".activity.CreateNoteActivity" />
 
         <receiver
-            android:name=".reciver.AlarmReciver"
+            android:name=".receiver.AlarmReceiver"
             android:enabled="true"
             android:exported="true" />
 

@@ -6,21 +6,19 @@ import android.view.View;
 
 public class GridSpacingItemDecoration extends RecyclerView.ItemDecoration {
 
-    private int spanCount;
-    private int spacing;
+    private int spanCount; //num of colum
+    private int spacing; // spacing bettwen item
     private boolean includeEdge;
-    private int headerNum;
 
-    public GridSpacingItemDecoration(int spanCount, int spacing, boolean includeEdge, int headerNum) {
+    public GridSpacingItemDecoration(int spanCount, int spacing, boolean includeEdge) {
         this.spanCount = spanCount;
         this.spacing = spacing;
         this.includeEdge = includeEdge;
-        this.headerNum = headerNum;
     }
 
     @Override
     public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
-        int position = parent.getChildAdapterPosition(view) - headerNum; // item position
+        int position = parent.getChildAdapterPosition(view); // item position
 
         if (position >= 0) {
             int column = position % spanCount; // item column
