@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
+import android.util.Log;
 
 import com.example.hieunt.note.model.Note;
 import com.example.hieunt.note.receiver.AlarmReceiver;
@@ -14,6 +15,7 @@ import java.util.Calendar;
 
 public class MyAlarmManager {
     private Context context;
+
     public MyAlarmManager(Context context) {
         this.context = context;
     }
@@ -28,6 +30,8 @@ public class MyAlarmManager {
         String time = note.getTime();
         int hour = Integer.parseInt(time.substring(0, time.indexOf(":")));
         int minute = Integer.parseInt(time.substring(time.indexOf(":") + 1, time.length()));
+
+        Log.d("xxx", "hour : " + hour + "   minute : " + minute);
         cal.set(year, month - 1, day, hour, minute, 0);
         AlarmManager alarmMgr = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(context, AlarmReceiver.class);

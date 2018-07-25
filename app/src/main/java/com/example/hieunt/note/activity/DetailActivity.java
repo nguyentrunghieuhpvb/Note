@@ -200,6 +200,22 @@ public class DetailActivity extends BaseActivity implements View.OnClickListener
         setValue();
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle bundle) {
+        super.onSaveInstanceState(bundle);
+        bundle.putSerializable(Constant.LIST_PATH, listImagePath);
+        bundle.putInt(Constant.COLOR, color);
+        bundle.putBoolean(Constant.ALARM, isAlarm);
+        bundle.putString(Constant.DATE, tvDate.getText().toString());
+        bundle.putString(Constant.TIME, tvTime.getText().toString());
+        bundle.putString(Constant.TITLE, etTitle.getText().toString());
+        bundle.putString(Constant.CONTENT, etContent.getText().toString());
+        bundle.putString(Constant.CURRENT_TIME, tvTime.getText().toString());
+
+    }
+
+
+
     private void setPopUpTime() {
         adapterTime = new PopupAdapter(this, new ArrayList<String>());
         final ListPopupWindow listPopupWindow = new ListPopupWindow(

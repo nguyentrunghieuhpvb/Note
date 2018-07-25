@@ -32,7 +32,6 @@ public class MainActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-
         DisplayMetrics displayMetrics = getApplication().getResources().getDisplayMetrics();
         float dpWidth = displayMetrics.widthPixels / displayMetrics.density;
         int numOfColumns = (int) (dpWidth / 180);

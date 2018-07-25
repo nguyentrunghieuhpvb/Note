@@ -11,6 +11,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
+import android.os.PersistableBundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -42,6 +43,7 @@ import com.example.hieunt.note.R;
 import com.example.hieunt.note.base.BaseActivity;
 import com.example.hieunt.note.database.DatabaseQuery;
 import com.example.hieunt.note.model.Note;
+import com.example.hieunt.note.utils.Constant;
 import com.example.hieunt.note.utils.DateManager;
 import com.example.hieunt.note.utils.MyAlarmManager;
 
@@ -54,6 +56,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Locale;
 
@@ -63,6 +66,8 @@ import io.realm.Realm;
 import io.realm.RealmList;
 
 public class CreateNoteActivity extends BaseActivity implements View.OnClickListener, Serializable {
+    private String TAG = "CreateNoteActivity";
+
     @BindView(R.id.tv_title)
     TextView tvTitle;
     @BindView(R.id.tv_time_creat)
@@ -102,9 +107,11 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
     private ArrayList<String> listImagePath = new ArrayList<>();
     private ListImageAdapter listImageAdapter;
     private PopupAdapter adapterDate, adapterTime;
+    private String date, time;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d(TAG, "onCreate");
         super.onCreate(savedInstanceState);
         db = DatabaseQuery.getInstance(this);
         Calendar c = Calendar.getInstance();
@@ -221,6 +228,7 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
         note.setDate(DateManager.getCurrentDate());
         note.setTime("09:00");
         isAlarm = true;
+        Log.d(TAG, "is alarm : " + isAlarm);
         tvAlarm.setVisibility(View.GONE);
         llChooeTime.setVisibility(View.VISIBLE);
         Calendar calendar = Calendar.getInstance();
@@ -369,6 +377,82 @@ public class CreateNoteActivity extends BaseActivity implements View.OnClickList
                 listPopupWindow.dismiss();
             }
         });
+    }
+
+    @Override
+    protected void onResume() {
+        Log.d(TAG, "on resume");
+        super.onResume();
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle bundle) {
+        Log.d(TAG, "onSaveInstanceState");
+        super.onSaveInstanceState(bundle);
+        bundle.putSerializable(Constant.LIST_PATH, listImagePath);
+        bundle.putInt(Constant.COLOR, color);
+        bundle.putBoolean(Constant.ALARM, isAlarm);
+        bundle.putString(Constant.DATE, tvDate.getText().toString());
+        bundle.putString(Constant.TIME, tvTime.getText().toString());
+        bundle.putString(Constant.TITLE, etTitle.getText().toString());
+        bundle.putString(Constant.CONTENT, etContent.getText().toString());
+        bundle.putString(Constant.TIME_CREAT, tvCurrentTime.getText().toString());
+
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle bundle) {
+        Log.d(TAG, "onRestoreInstanceState");
+        super.onRestoreInstanceState(bundle);
+        listImagePath = (ArrayList<String>) bundle.getSerializable(Constant.LIST_PATH);
+        color = bundle.getInt(Constant.COLOR);
+        isAlarm = bundle.getBoolean(Constant.ALARM);
+        note.setAlarm(isAlarm);
+        date = bundle.getString(Constant.DATE);
+        if (date.equals(getResources().getString(R.string.today))) {
+            date = DateManager.getCurrentDate();
+        } else if (date.equals(getResources().getString(R.string.tomorow))) {
+            date = DateManager.getDateTomorow();
+        } else if (date.contains("next")) {
+            date = DateManager.getDateNextWeek();
+        }
+        note.setDate(date);
+        note.setTime(bundle.getString(Constant.TIME));
+        note.setColor(color);
+        note.setDayCreate(bundle.getString(Constant.TIME_CREAT));
+        note.setTitle(bundle.getString(Constant.TITLE));
+        clCreatNote.setBackgroundColor(color);
+        listImageAdapter.setListImagePath(listImagePath);
+        if (listImagePath.size() > 0) {
+            rvListImage.setVisibility(View.VISIBLE);
+        }
+        tvTitle.setText(note.getTitle());
+        etTitle.setText(note.getTitle());
+        etContent.setText(note.getContent());
+        tvCurrentTime.setText(note.getDayCreate());
+        if (isAlarm) {
+            tvAlarm.setVisibility(View.GONE);
+            llChooeTime.setVisibility(View.VISIBLE);
+            Calendar calendar = Calendar.getInstance();
+            String dayLongName = calendar.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, Locale.getDefault());
+            listDay.add(getResources().getString(R.string.today));
+            listDay.add(getResources().getString(R.string.tomorow));
+            listDay.add("next " + dayLongName);
+            listDay.add(date);
+            adapterDate.setListItem(listDay);
+            tvDate.setText(date);
+
+            listTime = new ArrayList<>(Arrays.asList(getResources().getStringArray(R.array.listTime)));
+            if (!listTime.contains(time)) {
+                listTime.set(listTime.size() - 1, time);
+            }
+            tvTime.setText(time);
+            adapterTime.setListItem(listTime);
+        } else {
+            tvAlarm.setVisibility(View.VISIBLE);
+            llChooeTime.setVisibility(View.GONE);
+        }
+
     }
 
     @Override
